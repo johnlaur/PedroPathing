@@ -360,7 +360,7 @@ public final class Pose implements FuturePose {
      */
     @Override
     public String toString() {
-        return "(" + getX() + ", " + getY() + ", " + Math.toDegrees(getHeading()) + ")";
+        return "(" + getX() + ", " + getY() + ", " + Math.toDegrees(getHeading()) + ", " + getCoordinateSystem().getClass().toString() + ")";
     }
 
     /**

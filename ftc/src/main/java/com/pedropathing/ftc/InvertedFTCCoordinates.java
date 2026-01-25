@@ -1,6 +1,7 @@
 package com.pedropathing.ftc;
 
 import com.pedropathing.geometry.CoordinateSystem;
+import com.pedropathing.geometry.PedroCoordinates;
 import com.pedropathing.geometry.Pose;
 
 /**
@@ -20,8 +21,8 @@ public enum InvertedFTCCoordinates implements CoordinateSystem {
      */
     @Override
     public Pose convertFromPedro(Pose pose) {
-        Pose normalizedPose = pose.minus(new Pose(72, 72));
-        return normalizedPose.rotate(Math.PI / 2, true);
+        Pose newPose = pose.minus(new Pose(72, 72)).rotate(Math.PI / 2, true);
+        return new Pose(newPose.getX(), newPose.getY(), newPose.getHeading(), INSTANCE);
     }
 
     /**
@@ -32,7 +33,7 @@ public enum InvertedFTCCoordinates implements CoordinateSystem {
      */
     @Override
     public Pose convertToPedro(Pose pose) {
-        Pose rotatedPose = pose.rotate(Math.PI / 2, true);
-        return rotatedPose.plus(new Pose(72, 72));
+        Pose newPose = new Pose (pose.getX(), pose.getY(), pose.getHeading(), PedroCoordinates.INSTANCE);
+        return newPose.rotate(Math.PI / 2, true).plus(new Pose(72, 72));
     }
 }
