@@ -84,8 +84,8 @@ public class ErrorCalculator {
     }
 
     /**
-     * This returns the velocity the robot needs to be at to make it to the end of the Path
-     * at some specified deceleration (well technically just some negative acceleration).
+     * This returns the error in the velocity the robot needs to be at to make it to the end of the Path
+     * at some specified deceleration (well technically just some negative acceleration) relative to the robot's current velocity.
      *
      * @return returns the projected velocity.
      */
@@ -181,6 +181,12 @@ public class ErrorCalculator {
         return driveKalmanFilter.getState();
     }
 
+    /**
+     * This returns the drive error, which is computed by taking the distance to the goal. Using this distance,
+     * Pedro uses a predictive model to determine what the target velocity should be in order to reach the goal without overshooting.
+     * The drive error is taken to be a modified form of the difference between the target velocity and the current velocity, which is then infused with a Kalman Filter
+     * @return The drive error as a double.
+     */
     public double getDriveError() {
         if (driveError != null) return driveError;
 
@@ -273,8 +279,8 @@ public class ErrorCalculator {
                "Closest Pose: " + closestPose.toString() + "\n" +
                "Current Path: " + (currentPath != null ? currentPath.toString() : "null") + "\n" + "Following Path Chain: " + followingPathChain + "\n" +
                "Chain Index: " + chainIndex + "\n" +
-               "Drive Error: " + getDriveError() + "\n" +
-               "Heading Error: " + getHeadingError() + "\n" +
-               "Raw Drive Error: " + getRawDriveError();
+               "Drive Error: " + driveError + "\n" +
+               "Heading Error: " + headingError + "\n" +
+               "Raw Drive Error: " + rawDriveError;
     }
 }

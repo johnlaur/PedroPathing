@@ -179,4 +179,8 @@ public final class PathConstraints {
     public void setMaxVelocity(double maxVelocity) {
         this.maxVelocity = maxVelocity;
     }
+
+    public PathConstraints copy() {
+        return new PathConstraints(tValueConstraint, velocityConstraint, translationalConstraint, headingConstraint, timeoutConstraint, brakingStrength, BEZIER_CURVE_SEARCH_LIMIT, brakingStart);
+    }
 }

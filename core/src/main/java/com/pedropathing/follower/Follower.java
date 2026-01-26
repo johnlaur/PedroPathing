@@ -144,6 +144,30 @@ public class Follower {
     }
 
     /**
+     * This sets the current x-position estimate of the localizer. Units are inferred from localizer constants where necessary.
+     * @param x the x-position estimate to set
+     */
+    public void setX(double x) {
+        poseTracker.getLocalizer().setX(x);
+    }
+
+    /**
+     * This sets the current y-position estimate of the localizer. Units are inferred from localizer constants where necessary.
+     * @param y the y-position estimate to set
+     */
+    public void setY(double y) {
+        poseTracker.getLocalizer().setY(y);
+    }
+
+    /**
+     * This sets the current heading estimate of the localizer, in radians.
+     * @param heading the heading estimate to set
+     */
+    public void setHeading(double heading) {
+        poseTracker.getLocalizer().setHeading(heading);
+    }
+
+    /**
      * This returns the current pose from the PoseTracker.
      *
      * @return returns the pose
@@ -189,6 +213,7 @@ public class Follower {
         closestPose = currentPath.updateClosestPose(poseTracker.getPose(), 1);
     }
 
+
     /**
      * This holds a Point.
      *
@@ -199,13 +224,17 @@ public class Follower {
         holdPoint(point, heading, true);
     }
 
+    public void holdPoint(Pose pose, boolean useHoldScaling) {
+        holdPoint(new BezierPoint(pose), pose.getHeading(), useHoldScaling);
+    }
+
     /**
      * This holds a Point.
      *
      * @param pose the Point (as a Pose) to stay at.
      */
     public void holdPoint(Pose pose) {
-        holdPoint(new BezierPoint(pose), pose.getHeading());
+        holdPoint(new BezierPoint(pose), pose.getHeading(), true);
     }
 
     /**
@@ -334,6 +363,7 @@ public class Follower {
     public void startTeleopDrive() {
         breakFollowing();
         manualDrive = true;
+        update();
         drivetrain.startTeleopDrive();
     }
 
@@ -343,14 +373,65 @@ public class Follower {
     public void startTeleopDrive(boolean useBrakeMode) {
         breakFollowing();
         manualDrive = true;
+        update();
         drivetrain.startTeleopDrive(useBrakeMode);
+    }
+
+    public void startTeleOpDrive(boolean useBrakeMode) {
+        startTeleopDrive(useBrakeMode);
+    }
+
+    public void startTeleOpDrive() {
+        startTeleopDrive();
     }
 
     /**
      * This sets the Teleop drive movement vectors
+     *
+     * @param forward the forward movement
+     * @param strafe the strafe movement
+     * @param turn the turn movement
+     * @param isRobotCentric true if robot centric control, false if field centric
+     * @param offsetHeading the offset heading for field centric control, will face the direction of such heading in radians in the field coordinate system when driving forward
+     */
+    public void setTeleOpDrive(double forward, double strafe, double turn, boolean isRobotCentric, double offsetHeading) {
+        vectorCalculator.setTeleOpMovementVectors(forward, strafe, turn, isRobotCentric, offsetHeading);
+    }
+
+    /**
+     * This sets the Teleop drive movement vectors
+     *
+     * @param forward the forward movement
+     * @param strafe the strafe movement
+     * @param turn the turn movement
+     * @param offsetHeading the offset heading for field centric control, will face the direction of such heading in radians in the field coordinate system when driving forward
+     */
+    public void setTeleOpDrive(double forward, double strafe, double turn, double offsetHeading) {
+        vectorCalculator.setTeleOpMovementVectors(forward, strafe, turn, true, offsetHeading);
+    }
+
+    /**
+     * This sets the Teleop drive movement vectors
+     *
+     * @param forward the forward movement
+     * @param strafe the strafe movement
+     * @param turn the turn movement
+     * @param isRobotCentric true if robot centric control, false if field centric
      */
     public void setTeleOpDrive(double forward, double strafe, double turn, boolean isRobotCentric) {
         vectorCalculator.setTeleOpMovementVectors(forward, strafe, turn, isRobotCentric);
+    }
+
+    /**
+     * This sets the Teleop drive movement vectors
+     * This will default to robot centric control
+     *
+     * @param forward the forward movement
+     * @param strafe the strafe movement
+     * @param turn the turn movement
+     */
+    public void setTeleOpDrive(double forward, double strafe, double turn) {
+        vectorCalculator.setTeleOpMovementVectors(forward, strafe, turn);
     }
 
     /** Updates the Mecanum constants */
@@ -408,7 +489,7 @@ public class Follower {
             updateErrorAndVectors();
             drivetrain.runDrive(useHoldScaling? getTranslationalCorrection().times(holdPointTranslationalScaling) : getTranslationalCorrection(), useHoldScaling? getHeadingVector().times(holdPointHeadingScaling) : getHeadingVector(), new Vector(), poseTracker.getPose().getHeading());
 
-            if(getHeadingError() < turnHeadingErrorThreshold && isTurning) {
+            if(Math.abs(getHeadingError()) < turnHeadingErrorThreshold && isTurning) {
                 isTurning = false;
                 isBusy = false;
             }
@@ -612,7 +693,7 @@ public class Follower {
      */
     public void turn(double radians, boolean isLeft) {
         Pose temp = new Pose(getPose().getX(), getPose().getY(), getPose().getHeading() + (isLeft ? radians : -radians));
-        holdPoint(temp);
+        holdPoint(temp, false);
         isTurning = true;
         isBusy = true;
     }
@@ -621,7 +702,7 @@ public class Follower {
      * @param radians the heading in radians to turn to
      */
     public void turnTo(double radians) {
-        holdPoint(new Pose(getPose().getX(), getPose().getY(), radians));
+        holdPoint(new Pose(getPose().getX(), getPose().getY(), radians), false);
         isTurning = true;
         isBusy = true;
     }
@@ -629,6 +710,7 @@ public class Follower {
     /** Turns to a specific heading in degrees
      * @param degrees the heading in degrees to turn to
      */
+    @Deprecated
     public void turnToDegrees(double degrees) {
         turnTo(Math.toRadians(degrees));
     }
@@ -637,6 +719,7 @@ public class Follower {
      * @param degrees the amount of degrees to turn
      * @param isLeft true if turning left, false if turning right
      */
+    @Deprecated
     public void turnDegrees(double degrees, boolean isLeft) {
         turn(Math.toRadians(degrees), isLeft);
     }
@@ -734,14 +817,16 @@ public class Follower {
     public double getHeadingError() { return errorCalculator.getHeadingError(); }
 
     /**
-     * This returns the translational error, which is the difference between the robot's current position and the closest point's position.
+     * This returns the translational error, which is the distance between the robot's current position and the closest point's position.
      * @return returns the translational error as a Vector.
      */
     public Vector getTranslationalError() { return errorCalculator.getTranslationalError(); }
 
     /**
-     * This returns the drive error, which is the difference between the robot's current position and the closest point's position projected onto the tangent vector.
-     * @return returns the drive error as a double.
+     * This returns the drive error, which is computed by taking the distance to the goal. Using this distance,
+     * Pedro uses a predictive model to determine what the target velocity should be in order to reach the goal without overshooting.
+     * The drive error is taken to be a modified form of the difference between the target velocity and the current velocity, which is then infused with a Kalman Filter
+     * @return The drive error as a double.
      */
     public double getDriveError() { return errorCalculator.getDriveError(); }
 
@@ -913,7 +998,8 @@ public class Follower {
      */
     public double getClosestPointHeadingGoal() {
         if (currentPath == null) return 0;
-        if (currentPathChain != null) return currentPathChain.getClosestPointHeadingGoal(new PathChain.PathT(chainIndex, closestPose.tValue));
+        if (followingPathChain && currentPathChain != null)
+            return currentPathChain.getClosestPointHeadingGoal(new PathChain.PathT(chainIndex, closestPose.tValue));
         return currentPath.getHeadingGoal(closestPose);
     }
 
