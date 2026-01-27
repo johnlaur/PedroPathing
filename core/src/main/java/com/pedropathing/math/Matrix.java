@@ -380,6 +380,24 @@ public class Matrix {
     }
 
     /**
+     * Returns the inverse of this matrix using Gaussian elimination.
+     * @return the inverse of this matrix
+     * @throws IllegalStateException if the matrix is not square
+     * @throws IllegalArgumentException if the matrix is not invertible
+     */
+    public Matrix inverted() {
+        if (this.rowCount != this.colCount)
+            throw new IllegalStateException("Matrix must be square");
+
+        Matrix I = MatrixUtil.identity(this.rowCount);
+        Matrix[] r = Matrix.rref(this, I);
+
+        // r[0] should be identity if matrix is invertible, r[1] is the inverse
+        if (!r[0].isIdentity()) throw new IllegalArgumentException("matrix not invertible");
+        return r[1];
+    }
+
+    /**
      * Swap two rows in the matrix
      * @param srcRow row to swap
      * @param destRow row to swap to
@@ -502,6 +520,30 @@ public class Matrix {
         }
 
         return output;
+    }
+
+    /**
+     * Checks if this matrix is approximately the identity matrix within a tolerance.
+     * @param tolerance the maximum allowed difference from expected values
+     * @return true if this matrix is approximately the identity matrix
+     */
+    public boolean isIdentity(double tolerance) {
+        if (this.rowCount != this.colCount) return false;
+        for (int i = 0; i < this.rowCount; i++) {
+            for (int j = 0; j < this.colCount; j++) {
+                double expected = (i == j) ? 1.0 : 0.0;
+                if (Math.abs(this.matrix[i][j] - expected) > tolerance) return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks if this matrix is approximately the identity matrix using default tolerance of 1e-9.
+     * @return true if this matrix is approximately the identity matrix
+     */
+    public boolean isIdentity() {
+        return isIdentity(1e-9);
     }
 
     /**
