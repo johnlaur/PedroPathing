@@ -212,6 +212,14 @@ public class MathFunctions {
         return newMatrix;
     }
 
+    /**
+     * Performs linear interpolation between two values.
+     *
+     * @param a the start value.
+     * @param b the end value.
+     * @param t the interpolation factor (0.0 returns a, 1.0 returns b).
+     * @return returns the interpolated value between a and b.
+     */
     public static double lerp(double a, double b, double t) {
         return a + t * (b - a);
     }
